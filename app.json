@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "todo-app-expo",
+    "description": "Simple native Todo App that allows users to add text or image todos, built for learning purposes using Expo & React Native for the first time.",
     "slug": "todo-app-expo",
     "version": "1.0.0",
     "orientation": "portrait",
