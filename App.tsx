@@ -4,41 +4,48 @@ import Layout from "./components/layout";
 import TodoList from "./components/TodoList";
 import Form from "./components/Form";
 import { Todo } from "types";
-
-const initTodos: Todo[] = [];
-// const initTodos: Todo[] = [
-// 	{ type: "text", value: "learn react native basics" },
-// 	{ type: "text", value: "learn expo basics" },
-// 	{
-// 		type: "text",
-// 		value:
-// 			"check out the ability to use strapi for free (how to deploy the app)",
-// 	},
-// 	{
-// 		type: "img",
-// 		value:
-// 			"file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Ftodo-app-expo-632a2958-2e7a-4777-8a45-79e2a5df2d82/ImagePicker/88399924-bc0a-4b6a-93ad-d1358c0afc99.jpeg",
-// 	},
-// ];
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function App() {
-	const [todos, setTodos] = useState(initTodos);
+	const [todos, setTodos] = useState<Todo[]>([]);
+	console.log("todos:", todos);
+
 	const [input, setInput] = useState("");
+
+	const TODOS_KEY_IN_ASYNC_STORAGE = "todo-app-expo-todos";
 
 	function handleInputChange(value: string) {
 		setInput(value);
 	}
 
-	function handleAddTodo(todo: Todo) {
+	async function handleAddTodo(todo: Todo) {
 		if (!todo.value.trim().length)
 			return alert("Your todo is empty! Type smth!");
 
-		setTodos((prev) => [...prev, todo]);
+		const updatedTodos = [...todos, todo];
+
+		await updateTodosInAsyncStorage(updatedTodos);
+
 		setInput("");
 	}
 
-	function handleRemoveTodo(index: number) {
-		setTodos((prev) => prev.filter((_, i) => i !== index));
+	async function handleRemoveTodo(index: number) {
+		const updatedTodos = todos.filter((_, i) => i !== index);
+
+		await updateTodosInAsyncStorage(updatedTodos);
+	}
+
+	async function updateTodosInAsyncStorage(updatedTodos: Todo[]) {
+		try {
+			await AsyncStorage.setItem(
+				TODOS_KEY_IN_ASYNC_STORAGE,
+				JSON.stringify(updatedTodos)
+			);
+
+			setTodos(updatedTodos);
+		} catch (e) {
+			console.error("Error occured while updating todos in async storage...");
+		}
 	}
 
 	const pickImageAsync = async () => {
@@ -55,7 +62,24 @@ export default function App() {
 		}
 	};
 
-	useEffect(() => console.log(todos), [todos]);
+	useEffect(() => {
+		async function getTodosFromAsyncStorage() {
+			const storedTodosString = await AsyncStorage.getItem(
+				TODOS_KEY_IN_ASYNC_STORAGE
+			);
+
+			if (!storedTodosString) {
+				setTodos([]);
+				console.log("There are no todos stored on the device so far...");
+			} else {
+				const storedTodosParsed = JSON.parse(storedTodosString);
+				setTodos(storedTodosParsed);
+				console.log("There are todos stored on the device:", storedTodosParsed);
+			}
+		}
+
+		getTodosFromAsyncStorage();
+	}, []);
 
 	return (
 		<Layout>
